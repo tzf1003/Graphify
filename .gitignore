@@ -86,6 +86,16 @@ data/test-output/*
 server/data/*.db
 server/data/*.sqlite
 server/data/*.sqlite3
+server/data/uploads/*
+!server/data/uploads/.gitkeep
+
+# ==========================================
+# Python cache
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
 
 # ==========================================
 # Docker

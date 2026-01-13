@@ -10,6 +10,7 @@ import type {
   ElementType,
   RelationType,
 } from '@/types';
+import { smartLayout, type ForceEdge } from './forceLayout';
 
 // ==================== Vue Flow 类型定义 ====================
 
@@ -138,29 +139,52 @@ export function calculateInitialPosition(
  * @param data - CanonicalJSON 数据
  * @param config - 画布配置
  * @param nodePositions - 可选的节点位置覆盖（用于保持用户拖拽后的位置）
+ * @param autoLayout - 是否自动执行力导向布局（默认 true）
  * @returns Vue Flow 图谱数据
  */
 export function canonicalToGraph(
   data: CanonicalJSON,
   config: CanvasConfig = DEFAULT_CANVAS_CONFIG,
-  nodePositions?: Record<string, NodePosition>
+  nodePositions?: Record<string, NodePosition>,
+  autoLayout: boolean = true
 ): GraphData {
-  // 转换元素为节点
-  const nodes: GraphNode[] = data.elements.map((element) => {
+  // 检查是否有有效的位置缓存（至少有一个节点的位置）
+  const hasValidPositionCache = nodePositions && Object.keys(nodePositions).length > 0;
+  
+  // 计算初始位置
+  let positions: Record<string, NodePosition> = {};
+  
+  for (const element of data.elements) {
     // 优先使用传入的位置，否则根据 bbox 计算
-    const position = nodePositions?.[element.id] 
-      ?? calculateInitialPosition(element, config);
-    
-    return {
-      id: element.id,
-      type: 'element' as const,
-      position,
-      data: {
-        element,
-        isSelected: false,
-      },
-    };
-  });
+    positions[element.id] = (hasValidPositionCache && nodePositions[element.id])
+      ? nodePositions[element.id]
+      : calculateInitialPosition(element, config);
+  }
+
+  // 如果启用自动布局且没有有效的位置缓存，执行力导向布局
+  if (autoLayout && !hasValidPositionCache) {
+    const forceEdges: ForceEdge[] = data.relations.map((rel) => ({
+      source: rel.from,
+      target: rel.to,
+    }));
+
+    positions = smartLayout(positions, forceEdges, {
+      width: config.width,
+      height: config.height,
+      padding: config.padding,
+    });
+  }
+
+  // 转换元素为节点
+  const nodes: GraphNode[] = data.elements.map((element) => ({
+    id: element.id,
+    type: 'element' as const,
+    position: positions[element.id],
+    data: {
+      element,
+      isSelected: false,
+    },
+  }));
 
   // 转换关系为边
   const edges: GraphEdge[] = data.relations.map((relation, index) => ({

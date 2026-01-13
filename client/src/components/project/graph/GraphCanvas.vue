@@ -34,6 +34,7 @@ import type {
   NodePosition 
 } from '@/utils/graphTransform';
 import { canonicalToGraph } from '@/utils/graphTransform';
+import { forceLayout, gridLayout, circularLayout, type ForceEdge } from '@/utils/forceLayout';
 import ElementNode from './ElementNode.vue';
 import RelationEdge from './RelationEdge.vue';
 
@@ -247,6 +248,74 @@ function getNodePositions(): Record<string, NodePosition> {
   return { ...nodePositions.value };
 }
 
+/** 执行力导向自动布局 */
+function autoLayout() {
+  // 获取当前位置
+  const currentPositions: Record<string, NodePosition> = {};
+  for (const node of nodes.value) {
+    currentPositions[node.id] = { ...node.position };
+  }
+
+  // 构建边列表
+  const forceEdges: ForceEdge[] = props.relations.map((rel) => ({
+    source: rel.from,
+    target: rel.to,
+  }));
+
+  // 执行力导向布局
+  const newPositions = forceLayout(currentPositions, forceEdges, {
+    width: canvasConfig.width,
+    height: canvasConfig.height,
+    padding: canvasConfig.padding,
+  });
+
+  // 更新节点位置
+  nodePositions.value = newPositions;
+  nodes.value = nodes.value.map((node) => ({
+    ...node,
+    position: newPositions[node.id] ?? node.position,
+  }));
+
+  // 适应视图
+  setTimeout(() => fitToView(), 50);
+}
+
+/** 执行网格布局 */
+function applyGridLayout() {
+  const nodeIds = nodes.value.map((n) => n.id);
+  const newPositions = gridLayout(nodeIds, {
+    width: canvasConfig.width,
+    height: canvasConfig.height,
+    padding: canvasConfig.padding,
+  });
+
+  nodePositions.value = newPositions;
+  nodes.value = nodes.value.map((node) => ({
+    ...node,
+    position: newPositions[node.id] ?? node.position,
+  }));
+
+  setTimeout(() => fitToView(), 50);
+}
+
+/** 执行圆形布局 */
+function applyCircularLayout() {
+  const nodeIds = nodes.value.map((n) => n.id);
+  const newPositions = circularLayout(nodeIds, {
+    width: canvasConfig.width,
+    height: canvasConfig.height,
+    padding: canvasConfig.padding,
+  });
+
+  nodePositions.value = newPositions;
+  nodes.value = nodes.value.map((node) => ({
+    ...node,
+    position: newPositions[node.id] ?? node.position,
+  }));
+
+  setTimeout(() => fitToView(), 50);
+}
+
 // ==================== 生命周期 ====================
 
 onMounted(() => {
@@ -263,6 +332,9 @@ defineExpose({
   fitToView,
   resetView,
   getNodePositions,
+  autoLayout,
+  applyGridLayout,
+  applyCircularLayout,
 });
 </script>
 
@@ -358,6 +430,53 @@ defineExpose({
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
           <path d="M3 3v5h5"/>
+        </svg>
+      </button>
+      
+      <div class="canvas-controls__divider"></div>
+      
+      <button 
+        class="canvas-controls__btn" 
+        title="自动布局 (Auto Layout)"
+        @click="autoLayout"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="1"/>
+          <circle cx="19" cy="12" r="1"/>
+          <circle cx="5" cy="12" r="1"/>
+          <circle cx="12" cy="5" r="1"/>
+          <circle cx="12" cy="19" r="1"/>
+          <line x1="12" y1="6" x2="12" y2="11"/>
+          <line x1="12" y1="13" x2="12" y2="18"/>
+          <line x1="6" y1="12" x2="11" y2="12"/>
+          <line x1="13" y1="12" x2="18" y2="12"/>
+        </svg>
+      </button>
+      
+      <button 
+        class="canvas-controls__btn" 
+        title="网格布局 (Grid Layout)"
+        @click="applyGridLayout"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+        </svg>
+      </button>
+      
+      <button 
+        class="canvas-controls__btn" 
+        title="圆形布局 (Circular Layout)"
+        @click="applyCircularLayout"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"/>
+          <circle cx="12" cy="5" r="2"/>
+          <circle cx="19" cy="12" r="2"/>
+          <circle cx="12" cy="19" r="2"/>
+          <circle cx="5" cy="12" r="2"/>
         </svg>
       </button>
     </div>
