@@ -154,9 +154,9 @@ function isCurrentVersion(versionId: string): boolean {
             </div>
           </div>
 
-          <!-- Checkout 按钮 -->
+          <!-- Checkout 按钮（禁止回溯到类型为"回溯"的版本） -->
           <button
-            v-if="!isCurrentVersion(version.id)"
+            v-if="!isCurrentVersion(version.id) && version.versionType !== 'checkout'"
             class="version-item__checkout"
             title="回溯到此版本"
             @click="handleCheckout(version.id, $event)"

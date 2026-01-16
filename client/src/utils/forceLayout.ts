@@ -68,14 +68,14 @@ const DEFAULT_CONFIG: ForceLayoutConfig = {
   padding: 80,
   nodeWidth: 160,
   nodeHeight: 80,
-  repulsionStrength: 8000,
-  attractionStrength: 0.05,
-  idealEdgeLength: 200,
-  centerGravity: 0.01,
+  repulsionStrength: 12000,
+  attractionStrength: 0.03,
+  idealEdgeLength: 250,
+  centerGravity: 0.008,
   damping: 0.85,
   maxIterations: 300,
   minMovement: 0.5,
-  minNodeSpacing: 40,
+  minNodeSpacing: 60,
   crossingPenaltyStrength: 500,
   enableCrossingOptimization: true,
   postOptimizationIterations: 50,
@@ -321,10 +321,15 @@ function calculateRepulsion(
       // 计算最小安全距离（基于节点尺寸）
       const minDist = (nodeA.width + nodeB.width) / 2 + minNodeSpacing;
 
-      // 如果节点重叠或太近，增加斥力
+      // 计算力
       let force: number;
       if (dist < minDist) {
-        // 重叠时使用更强的斥力
+        // 重叠或太近时，使用非常强的线性斥力，确保推开
+        // 距离越近，力越大
+        const overlap = minDist - dist;
+        force = repulsionStrength * 4 * (overlap / minDist + 1) / dist;
+      } else if (dist < minDist * 1.5) {
+        // 接近最小距离时，使用较强的斥力
         force = repulsionStrength * 2 / (dist * dist);
       } else {
         // 正常斥力（库仑力）
@@ -413,7 +418,7 @@ function calculateCenterGravity(
 
 /**
  * 方案D：后处理优化 - 局部调整减少边交叉
- * 通过小幅度移动节点来尝试减少交叉
+ * 通过小幅度移动节点来尝试减少交叉，同时确保不产生节点重叠
  */
 function postProcessCrossingOptimization(
   _nodes: ForceNode[],
@@ -423,7 +428,7 @@ function postProcessCrossingOptimization(
 ): void {
   if (edges.length < 2 || !config.enableCrossingOptimization) return;
   
-  const { postOptimizationIterations, width, height, padding } = config;
+  const { postOptimizationIterations, width, height, padding, minNodeSpacing } = config;
   
   // 计算当前交叉数
   const getCurrentCrossings = (): number => {
@@ -436,6 +441,23 @@ function postProcessCrossingOptimization(
       }
     }
     return count;
+  };
+  
+  // 检查节点在新位置是否会与其他节点重叠
+  const wouldOverlap = (node: ForceNode, newX: number, newY: number): boolean => {
+    for (const [otherId, other] of nodeMap) {
+      if (otherId === node.id) continue;
+      
+      const dx = Math.abs(newX - other.x);
+      const dy = Math.abs(newY - other.y);
+      const minDistX = (node.width + other.width) / 2 + minNodeSpacing;
+      const minDistY = (node.height + other.height) / 2 + minNodeSpacing;
+      
+      if (dx < minDistX && dy < minDistY) {
+        return true;
+      }
+    }
+    return false;
   };
   
   let currentCrossings = getCurrentCrossings();
@@ -498,6 +520,11 @@ function postProcessCrossingOptimization(
         const newX = Math.max(minX, Math.min(maxX, originalX + dx));
         const newY = Math.max(minY, Math.min(maxY, originalY + dy));
         
+        // 检查是否会产生重叠，如果会则跳过这个方向
+        if (wouldOverlap(node, newX, newY)) {
+          continue;
+        }
+        
         node.x = newX;
         node.y = newY;
         
@@ -508,13 +535,16 @@ function postProcessCrossingOptimization(
           bestX = newX;
           bestY = newY;
         }
+        
+        // 恢复原位置继续尝试其他方向
+        node.x = originalX;
+        node.y = originalY;
       }
       
-      // 应用最佳位置
-      node.x = bestX;
-      node.y = bestY;
-      
-      if (bestCrossings < currentCrossings) {
+      // 只有在找到更好位置且不会重叠时才应用
+      if (bestCrossings < currentCrossings && !wouldOverlap(node, bestX, bestY)) {
+        node.x = bestX;
+        node.y = bestY;
         currentCrossings = bestCrossings;
         improved = true;
       }
@@ -651,6 +681,37 @@ export function forceLayout(
   // 阶段2：方案D - 后处理优化
   if (cfg.enableCrossingOptimization) {
     postProcessCrossingOptimization(nodes, edges, nodeMap, cfg);
+    
+    // 阶段3：后处理后再次分散重叠的节点
+    // 使用增强的斥力配置
+    const separationConfig = {
+      ...cfg,
+      repulsionStrength: cfg.repulsionStrength * 1.5,
+      centerGravity: cfg.centerGravity * 0.5,
+    };
+    
+    for (let i = 0; i < 150; i++) {
+      // 重置速度
+      for (const node of nodes) {
+        if (!node.fixed) {
+          node.vx = 0;
+          node.vy = 0;
+        }
+      }
+
+      // 只计算斥力（分散重叠节点）
+      calculateRepulsion(nodes, separationConfig);
+      // 轻微的中心引力防止飘散
+      calculateCenterGravity(nodes, separationConfig);
+
+      // 应用速度
+      const movement = applyVelocity(nodes, cfg);
+
+      // 检查是否稳定
+      if (movement < cfg.minMovement * nodes.length) {
+        break;
+      }
+    }
   }
 
   // 返回最终位置

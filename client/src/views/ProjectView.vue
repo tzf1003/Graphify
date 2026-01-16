@@ -2,6 +2,7 @@
 /**
  * 项目编辑页
  * 布局：左侧版本列表、中间图片预览、右侧编辑器和生成面板
+ * 中间和右侧之间有可拖动的分割线
  * 连接所有子组件和 Store
  */
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
@@ -11,8 +12,38 @@ import { useGenerationStore } from '../stores/generation';
 import VersionList from '../components/project/VersionList.vue';
 import ImagePreview from '../components/project/ImagePreview.vue';
 import GraphJsonEditor from '../components/project/GraphJsonEditor.vue';
-import GeneratePanel from '../components/project/GeneratePanel.vue';
-import CandidateGrid from '../components/project/CandidateGrid.vue';
+import GenerationPanel from '../components/project/GenerationPanel.vue';
+
+// ==================== 分割线拖动 ====================
+const rightPanelWidth = ref(400); // 右侧面板初始宽度
+const isDragging = ref(false);
+const minRightWidth = 300; // 右侧最小宽度
+const maxRightWidth = 800; // 右侧最大宽度
+
+function startDrag(e: MouseEvent): void {
+  isDragging.value = true;
+  document.addEventListener('mousemove', onDrag);
+  document.addEventListener('mouseup', stopDrag);
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+  e.preventDefault();
+}
+
+function onDrag(e: MouseEvent): void {
+  if (!isDragging.value) return;
+  
+  // 计算新宽度：从窗口右边缘到鼠标位置的距离
+  const newWidth = window.innerWidth - e.clientX - 16; // 16px 是右侧 padding
+  rightPanelWidth.value = Math.max(minRightWidth, Math.min(maxRightWidth, newWidth));
+}
+
+function stopDrag(): void {
+  isDragging.value = false;
+  document.removeEventListener('mousemove', onDrag);
+  document.removeEventListener('mouseup', stopDrag);
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+}
 
 // ==================== 路由 ====================
 const route = useRoute();
@@ -195,8 +226,18 @@ function goBack(): void {
         />
       </section>
 
+      <!-- 可拖动分割线 -->
+      <div 
+        class="project-view__resizer"
+        :class="{ 'project-view__resizer--dragging': isDragging }"
+        @mousedown="startDrag"
+      ></div>
+
       <!-- 右侧：编辑器和生成面板 -->
-      <aside class="project-view__sidebar project-view__sidebar--right">
+      <aside 
+        class="project-view__sidebar project-view__sidebar--right"
+        :style="{ width: rightPanelWidth + 'px' }"
+      >
         <!-- 标签切换 -->
         <div class="project-view__tabs">
           <button
@@ -231,26 +272,19 @@ function goBack(): void {
 
         <!-- 生成面板 -->
         <div v-show="activeTab === 'generate'" class="project-view__panel">
-          <!-- 生成设置 -->
-          <GeneratePanel
+          <GenerationPanel
             :generating="generating"
             :job-status="jobStatus"
             :error-message="jobError"
             :disabled="!currentVersion"
+            :candidates="candidates"
+            :selected-candidate-id="selectedCandidateId"
+            :confirming-selection="confirmingSelection"
             @generate="handleGenerate"
             @cancel="handleGenerateCancel"
-          />
-
-          <!-- 候选图网格 -->
-          <CandidateGrid
-            v-if="hasCandidates || generating"
-            :candidates="candidates"
-            :selected-id="selectedCandidateId"
-            :loading="generating && !hasCandidates"
-            :confirming="confirmingSelection"
-            @select="handleCandidateSelect"
-            @confirm="handleCandidateConfirm"
-            @cancel="handleCandidateCancel"
+            @select-candidate="handleCandidateSelect"
+            @confirm-selection="handleCandidateConfirm"
+            @cancel-selection="handleCandidateCancel"
           />
         </div>
       </aside>
@@ -396,6 +430,46 @@ function goBack(): void {
   flex-shrink: 0;
 }
 
+/* 可拖动分割线 */
+.project-view__resizer {
+  width: 6px;
+  margin: 0 -3px;
+  cursor: col-resize;
+  background: transparent;
+  position: relative;
+  z-index: 10;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.project-view__resizer::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px;
+  height: 40px;
+  background: #444;
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.project-view__resizer:hover::after,
+.project-view__resizer--dragging::after {
+  opacity: 1;
+}
+
+.project-view__resizer:hover,
+.project-view__resizer--dragging {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+.project-view__resizer--dragging::after {
+  background: #3b82f6;
+}
+
 .project-view__center {
   flex: 1;
   min-width: 0;
@@ -463,7 +537,6 @@ function goBack(): void {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 16px;
   min-height: 0;
   background: #1e1e1e;
   border-radius: 0 0 8px 8px;

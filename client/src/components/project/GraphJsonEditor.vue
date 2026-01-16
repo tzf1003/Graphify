@@ -79,9 +79,6 @@ const editor = shallowRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 /** JSON编辑器内容 */
 const jsonContent = ref('');
 
-/** GraphCanvas组件引用 */
-const graphCanvasRef = ref<InstanceType<typeof GraphCanvas> | null>(null);
-
 /** 关系类型选择器状态 */
 const relationSelector = ref<{
   visible: boolean;
@@ -500,28 +497,6 @@ function handleSave() {
   emit('save', jsonString);
   hasChanges.value = false;
 }
-
-// ==================== 画布控制方法 ====================
-
-/** 放大 */
-function zoomIn() {
-  graphCanvasRef.value?.zoomIn();
-}
-
-/** 缩小 */
-function zoomOut() {
-  graphCanvasRef.value?.zoomOut();
-}
-
-/** 适应视图 */
-function fitToView() {
-  graphCanvasRef.value?.fitToView();
-}
-
-/** 重置视图 */
-function resetView() {
-  graphCanvasRef.value?.resetView();
-}
 </script>
 
 <template>
@@ -547,52 +522,6 @@ function resetView() {
       </div>
       
       <div class="editor-toolbar__right">
-        <!-- 画布控制按钮（仅在图谱视图显示） -->
-        <template v-if="viewMode === 'graph'">
-          <button
-            class="toolbar-btn"
-            title="放大"
-            @click="zoomIn"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8" />
-              <path d="M21 21l-4.35-4.35" />
-              <path d="M11 8v6M8 11h6" />
-            </svg>
-          </button>
-          <button
-            class="toolbar-btn"
-            title="缩小"
-            @click="zoomOut"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8" />
-              <path d="M21 21l-4.35-4.35" />
-              <path d="M8 11h6" />
-            </svg>
-          </button>
-          <button
-            class="toolbar-btn"
-            title="适应视图"
-            @click="fitToView"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-            </svg>
-          </button>
-          <button
-            class="toolbar-btn"
-            title="重置视图"
-            @click="resetView"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-              <path d="M3 3v5h5" />
-            </svg>
-          </button>
-          <div class="toolbar-divider"></div>
-        </template>
-        
         <!-- 格式化按钮（仅在JSON视图显示） -->
         <button
           v-if="viewMode === 'json'"
@@ -657,7 +586,6 @@ function resetView() {
         <div class="editor-graph">
           <!-- 图谱画布 -->
           <GraphCanvas
-            ref="graphCanvasRef"
             :elements="elements"
             :relations="relations"
             :selected-node-id="selectedNodeId"
@@ -784,13 +712,6 @@ function resetView() {
 
 .toolbar-btn--primary:hover:not(:disabled) {
   background: #2563eb;
-}
-
-.toolbar-divider {
-  width: 1px;
-  height: 20px;
-  background: #333;
-  margin: 0 4px;
 }
 
 .toolbar-spinner {

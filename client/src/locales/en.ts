@@ -1,6 +1,6 @@
 export default {
   common: {
-    appName: 'Image Editor',
+    appName: 'Graphify',
     send: 'Send',
     cancel: 'Cancel',
     upload: 'Upload',
@@ -19,34 +19,34 @@ export default {
     menu: 'Menu'
   },
   welcome: {
-    title: 'Hello, I am your design assistant',
-    subtitle: 'Upload an image or describe your idea, let me help you create designs'
+    title: 'Graphify, Design Made Visual',
+    subtitle: 'Upload images for smart parsing, or describe ideas for instant generation. Visual design has never been easier.'
   },
   chat: {
-    placeholder: 'Describe the image you want to generate...',
-    uploadHint: 'Or upload an image to start',
-    generating: 'AI is generating your image...',
-    analyzing: 'AI is analyzing the image...',
-    sendMessage: 'Send message',
+    placeholder: 'Describe your design, let Graphify visualize it...',
+    uploadHint: 'Drag or click to upload image',
+    generating: 'Graphify is creating your design...',
+    analyzing: 'Graphify is parsing image structure...',
+    sendMessage: 'Send',
     clearHistory: 'Clear conversation',
-    emptyState: 'Start a conversation with AI, describe your design'
+    emptyState: 'Tell Graphify your design idea'
   },
   hints: {
     upload: {
-      title: 'Upload Image',
-      desc: 'Upload a design image, AI will automatically parse it into editable JSON structure'
+      title: 'Smart Parsing',
+      desc: 'Upload designs, AI auto-detects elements and hierarchy'
     },
     describe: {
-      title: 'Describe Your Idea',
-      desc: 'Describe the interface you want in words, AI will generate the design for you'
+      title: 'Text to Design',
+      desc: 'Describe your idea, AI generates professional designs instantly'
     },
     edit: {
-      title: 'Edit JSON',
-      desc: 'Directly edit the JSON structure to adjust design details'
+      title: 'Visual Editing',
+      desc: 'Graphical editing interface, what you see is what you get'
     },
     regenerate: {
-      title: 'Regenerate',
-      desc: 'Not satisfied? Let AI generate another version'
+      title: 'One-Click Rebuild',
+      desc: 'Not satisfied? One click to regenerate'
     }
   },
   theme: {

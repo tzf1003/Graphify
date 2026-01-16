@@ -114,10 +114,24 @@ onUnmounted(() => {
           </svg>
         </button>
         <button class="logo-btn" @click="goHome" :title="t('common.home') || '首页'">
-          <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <rect x="3" y="3" width="18" height="18" rx="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
-            <path d="M21 15l-5-5L5 21" stroke-linecap="round" stroke-linejoin="round"/>
+          <svg class="logo-icon" viewBox="0 0 32 32" fill="none">
+            <defs>
+              <linearGradient id="logoGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#6366f1"/>
+                <stop offset="100%" style="stop-color:#8b5cf6"/>
+              </linearGradient>
+              <linearGradient id="logoGrad2" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:#06b6d4"/>
+                <stop offset="100%" style="stop-color:#6366f1"/>
+              </linearGradient>
+            </defs>
+            <circle cx="10" cy="10" r="3" fill="url(#logoGrad1)"/>
+            <circle cx="22" cy="10" r="2.5" fill="url(#logoGrad2)"/>
+            <circle cx="16" cy="22" r="3.5" fill="url(#logoGrad1)"/>
+            <circle cx="8" cy="20" r="2" fill="url(#logoGrad2)" opacity="0.7"/>
+            <path d="M10 13 L16 19" stroke="url(#logoGrad2)" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M22 12 L16 19" stroke="url(#logoGrad1)" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M10 10 L20 10" stroke="url(#logoGrad2)" stroke-width="1" stroke-linecap="round" opacity="0.5"/>
           </svg>
           <span class="logo-text">{{ title }}</span>
         </button>

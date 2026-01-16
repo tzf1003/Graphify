@@ -28,6 +28,8 @@ out/
 .env.production
 .env.test
 !.env.example
+server/.env
+client/.env
 
 # ==========================================
 # IDE & Editors

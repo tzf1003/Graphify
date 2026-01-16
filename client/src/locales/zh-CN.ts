@@ -1,6 +1,6 @@
 export default {
   common: {
-    appName: '图片编辑器',
+    appName: '图析',
     send: '发送',
     cancel: '取消',
     upload: '上传',
@@ -19,34 +19,34 @@ export default {
     menu: '菜单'
   },
   welcome: {
-    title: '你好，我是你的设计助手',
-    subtitle: '上传图片或描述你的想法，让我帮你创建设计'
+    title: '图析，让设计一目了然',
+    subtitle: '上传图片智能解析，或描述想法即刻生成，可视化设计从未如此简单'
   },
   chat: {
-    placeholder: '描述你想要生成的图片...',
-    uploadHint: '或上传一张图片开始',
-    generating: 'AI 正在生成图片...',
-    analyzing: 'AI 正在分析图片...',
-    sendMessage: '发送消息',
+    placeholder: '描述你想要的设计，让图析为你呈现...',
+    uploadHint: '拖拽或点击上传图片',
+    generating: '图析正在为你生成设计...',
+    analyzing: '图析正在解析图片结构...',
+    sendMessage: '发送',
     clearHistory: '清空对话',
-    emptyState: '开始与 AI 对话，描述你想要的设计'
+    emptyState: '告诉图析你的设计想法'
   },
   hints: {
     upload: {
-      title: '上传图片',
-      desc: '上传一张设计图，AI 将自动解析为可编辑的 JSON 结构'
+      title: '智能解析',
+      desc: '上传设计图，AI 自动识别元素与层级结构'
     },
     describe: {
-      title: '描述创意',
-      desc: '用文字描述你想要的界面，AI 将为你生成设计'
+      title: '文字生图',
+      desc: '描述你的创意，AI 即刻生成专业设计'
     },
     edit: {
-      title: '编辑 JSON',
-      desc: '直接编辑 JSON 结构来调整设计细节'
+      title: '可视编辑',
+      desc: '图形化编辑界面，所见即所得'
     },
     regenerate: {
-      title: '重新生成',
-      desc: '不满意？让 AI 重新生成一个版本'
+      title: '一键重构',
+      desc: '不满意？一键让 AI 重新生成'
     }
   },
   theme: {

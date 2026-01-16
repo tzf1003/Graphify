@@ -3,8 +3,9 @@
  * 候选图网格组件
  * 显示候选图缩略图网格
  * 实现点击选择高亮，确认选择按钮
+ * 支持图片放大预览
  */
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import type { CandidateImage } from '../../types';
 
 // ==================== Props ====================
@@ -27,17 +28,16 @@ const emit = defineEmits<{
   (e: 'cancel'): void;
 }>();
 
+// ==================== 状态 ====================
+/** 放大预览的图片URL */
+const previewImageUrl = ref<string | null>(null);
+
 // ==================== 计算属性 ====================
 const sortedCandidates = computed(() => {
   return [...props.candidates].sort((a, b) => a.indexNum - b.indexNum);
 });
 
 const hasSelection = computed(() => props.selectedId !== null);
-
-const selectedCandidate = computed(() => {
-  if (!props.selectedId) return null;
-  return props.candidates.find(c => c.id === props.selectedId) ?? null;
-});
 
 // ==================== 方法 ====================
 function handleSelect(candidateId: string): void {
@@ -54,6 +54,17 @@ function handleCancel(): void {
 
 function isSelected(candidateId: string): boolean {
   return candidateId === props.selectedId;
+}
+
+/** 打开放大预览 */
+function openPreview(imageUrl: string, event: Event): void {
+  event.stopPropagation();
+  previewImageUrl.value = imageUrl;
+}
+
+/** 关闭放大预览 */
+function closePreview(): void {
+  previewImageUrl.value = null;
 }
 </script>
 
@@ -97,22 +108,25 @@ function isSelected(candidateId: string): boolean {
             class="candidate-grid__image"
           />
           <div class="candidate-grid__index">{{ candidate.indexNum + 1 }}</div>
+          <!-- 右上角勾选标记 -->
           <div v-if="isSelected(candidate.id)" class="candidate-grid__check">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </div>
+          <!-- 悬停时显示放大按钮 -->
+          <button
+            class="candidate-grid__zoom-btn"
+            title="放大查看"
+            @click="openPreview(candidate.imageUrl, $event)"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8" />
+              <path d="M21 21l-4.35-4.35" />
+              <path d="M11 8v6M8 11h6" />
+            </svg>
+          </button>
         </div>
-      </div>
-
-      <!-- 选中预览 -->
-      <div v-if="selectedCandidate" class="candidate-grid__preview">
-        <div class="candidate-grid__preview-label">已选择</div>
-        <img
-          :src="selectedCandidate.imageUrl"
-          :alt="`已选择候选图 ${selectedCandidate.indexNum + 1}`"
-          class="candidate-grid__preview-image"
-        />
       </div>
 
       <!-- 操作按钮 -->
@@ -141,6 +155,32 @@ function isSelected(candidateId: string): boolean {
         </button>
       </div>
     </div>
+
+    <!-- 图片放大预览弹窗 -->
+    <Teleport to="body">
+      <div
+        v-if="previewImageUrl"
+        class="candidate-grid__preview-modal"
+        @click="closePreview"
+      >
+        <div class="candidate-grid__preview-content" @click.stop>
+          <img
+            :src="previewImageUrl"
+            alt="放大预览"
+            class="candidate-grid__preview-image"
+          />
+          <button
+            class="candidate-grid__preview-close"
+            title="关闭"
+            @click="closePreview"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -283,25 +323,36 @@ function isSelected(candidateId: string): boolean {
   color: #fff;
 }
 
-.candidate-grid__preview {
+/* 放大按钮 - 悬停时显示 */
+.candidate-grid__zoom-btn {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 28px;
+  height: 28px;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  background: #2a2a2a;
-  border-radius: 8px;
-}
-
-.candidate-grid__preview-label {
-  font-size: 12px;
-  color: #888;
-}
-
-.candidate-grid__preview-image {
-  width: 100%;
-  max-height: 200px;
-  object-fit: contain;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+  border: none;
   border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background-color 0.15s;
+}
+
+.candidate-grid__item:hover .candidate-grid__zoom-btn {
+  opacity: 1;
+}
+
+.candidate-grid__zoom-btn:hover {
+  background: rgba(59, 130, 246, 0.9);
+}
+
+.candidate-grid__zoom-btn svg {
+  width: 16px;
+  height: 16px;
 }
 
 .candidate-grid__actions {
@@ -359,5 +410,60 @@ function isSelected(candidateId: string): boolean {
   border-top-color: #fff;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
+}
+
+/* 图片放大预览弹窗 */
+.candidate-grid__preview-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 9999;
+  padding: 24px;
+}
+
+.candidate-grid__preview-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.candidate-grid__preview-image {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.candidate-grid__preview-close {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #333;
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.candidate-grid__preview-close:hover {
+  background: #ef4444;
+}
+
+.candidate-grid__preview-close svg {
+  width: 18px;
+  height: 18px;
 }
 </style>

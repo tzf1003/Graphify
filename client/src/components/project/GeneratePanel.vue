@@ -241,7 +241,7 @@ function handleCountChange(delta: number): void {
   flex-direction: column;
   background: #1e1e1e;
   border-radius: 8px;
-  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .generate-panel__header {

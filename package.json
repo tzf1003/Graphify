@@ -1,8 +1,8 @@
 {
-  "name": "image-editor-json-driven",
+  "name": "graphify",
   "version": "1.0.0",
   "private": true,
-  "description": "JSON-driven online image editor with AI-powered generation",
+  "description": "图析 - AI驱动的智能图形化设计平台",
   "scripts": {
     "dev:server": "npm run dev --workspace=server",
     "dev:client": "npm run dev --workspace=client",
